@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>影盘搜 · 全网影视网盘资源聚合搜索</title>
+<style>
+  :root{
+    --bg:#080b12; --panel:#111827; --panel-2:#0d1420; --line:#1e293b;
+    --text:#e8eefb; --muted:#8b9ab3; --accent:#5b8cff; --accent-2:#8b5cf6;
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(91,140,255,.18), transparent 62%),
+      radial-gradient(800px 460px at 92% 0%, rgba(139,92,246,.14), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex;flex-direction:column;
+  }
+  a{color:inherit}
+  button{font-family:inherit}
+
+  /* ---------------- 顶部 ---------------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:18px 26px;border-bottom:1px solid rgba(255,255,255,.05);
+    position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(14px);
+    background:rgba(8,11,18,.72);
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    font-weight:800;font-size:19px;color:#fff;letter-spacing:-1px;
+    box-shadow:0 8px 24px rgba(91,140,255,.35);
+  }
+  .brand h1{margin:0;font-size:17px;letter-spacing:.5px}
+  .brand p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+  .top-actions{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:6px;box-shadow:0 0 10px var(--ok)}
+  .top-actions button{
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    padding:7px 13px;border-radius:9px;cursor:pointer;font-size:12.5px;transition:.18s;
+  }
+  .top-actions button:hover{color:var(--text);border-color:#334155;background:rgba(255,255,255,.03)}
+
+  /* ---------------- 主体 ---------------- */
+  main{width:100%;max-width:1080px;margin:0 auto;padding:38px 22px 60px;flex:1}
+  .hero h2{
+    margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-.5px;
+    background:linear-gradient(120deg,#fff 30%,#9db4ff 70%,#c4a8ff);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero .sub{margin:0 0 26px;color:var(--muted);font-size:14px;line-height:1.7}
+
+  .searchbox{
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.1);border-radius:16px;
+    padding:8px 8px 8px 16px;
+    box-shadow:0 16px 40px -18px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06);
+    transition:.2s border-color,.2s box-shadow;
+  }
+  .searchbox:focus-within{border-color:rgba(91,140,255,.65);box-shadow:0 0 0 4px rgba(91,140,255,.12),0 16px 40px -18px rgba(0,0,0,.9)}
+  .searchbox svg{flex:none;color:var(--muted)}
+  #q{
+    flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--text);
+    font-size:16px;padding:11px 0;
+  }
+  #q::placeholder{color:#5b6880}
+  #go{
+    flex:none;border:0;border-radius:11px;padding:11px 24px;font-size:14.5px;font-weight:700;
+    color:#fff;cursor:pointer;letter-spacing:.5px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 8px 20px -8px rgba(91,140,255,.9);transition:.18s;
+  }
+  #go:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  #go:active{transform:translateY(0)}
+  #go:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+  .opts{display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-top:16px;font-size:13px;color:var(--muted)}
+  .opts label{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+  .opts input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+  .opts select{
+    background:var(--panel);color:var(--text);border:1px solid var(--line);
+    border-radius:7px;padding:4px 8px;font-size:12.5px;outline:0;
+  }
+  .engines{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .eng{
+    padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;
+    color:var(--muted);font-size:12px;cursor:pointer;transition:.15s;
+  }
+  .eng.on{border-color:rgba(91,140,255,.55);color:#c7d7ff;background:rgba(91,140,255,.13)}
+
+  /* ---------------- 进度 ---------------- */
+  .progress{margin-top:28px;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .p-head{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;margin-bottom:11px}
+  .p-stage{color:#cfe0ff;display:flex;align-items:center;gap:9px}
+  .spinner{width:13px;height:13px;border-radius:50%;border:2px solid rgba(91,140,255,.25);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .p-count{color:var(--muted);font-variant-numeric:tabular-nums}
+  .bar{height:5px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+  .bar i{display:block;height:100%;width:8%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .35s ease}
+  .bar.indet i{animation:slide 1.4s ease-in-out infinite}
+  @keyframes slide{0%{margin-left:-12%;width:22%}50%{margin-left:52%;width:32%}100%{margin-left:100%;width:18%}}
+  .eng-status{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px;font-size:12px}
+  .eng-status span{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:7px;background:rgba(255,255,255,.04);color:var(--muted)}
+  .eng-status b{font-weight:600}
+  .eng-status .s-ok{color:#86efac}.eng-status .s-bad{color:#fca5a5}.eng-status .s-empty{color:#cbd5e1}
+  .log{
+    margin-top:12px;max-height:118px;overflow:auto;font-size:12px;line-height:1.75;color:#6f8099;
+    border-top:1px dashed rgba(255,255,255,.07);padding-top:10px;
+    font-family:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+  }
+  .log div{white-space:pre-wrap;word-break:break-all}
+  .log .warn{color:#fbbf24}
+
+  /* ---------------- 筛选 ---------------- */
+  .filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:26px 0 16px}
+  .chip{
+    padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.02);
+    color:var(--muted);font-size:12.5px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;
+  }
+  .chip:hover{color:var(--text)}
+  .chip.on{background:rgba(91,140,255,.15);border-color:rgba(91,140,255,.5);color:#d6e2ff}
+  .chip .n{font-size:11px;opacity:.6;font-variant-numeric:tabular-nums}
+  .filters .spacer{flex:1}
+  .mini{
+    background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;
+    padding:6px 11px;font-size:12px;cursor:pointer;transition:.15s;
+  }
+  .mini:hover{color:var(--text);border-color:#334155}
+
+  /* ---------------- 结果 ---------------- */
+  .results{display:flex;flex-direction:column;gap:12px}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+    border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;
+    transition:.18s;animation:in .28s ease both;
+  }
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card:hover{border-color:#2b3b55;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02))}
+  .c-head{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+    padding:3.5px 10px;border-radius:6px;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent);
+    border:1px solid color-mix(in srgb,var(--c) 35%,transparent);
+  }
+  .badge i{width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c)}
+  .st{font-size:11px;padding:3px 8px;border-radius:5px;color:var(--muted);background:rgba(255,255,255,.05)}
+  .st.alive{color:#86efac;background:rgba(34,197,94,.13)}
+  .st.dead{color:#fca5a5;background:rgba(239,68,68,.12)}
+  .st.unknown{color:#fcd34d;background:rgba(245,158,11,.1)}
+  .score{margin-left:auto;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .score b{color:#c7d7ff;font-size:13px}
+  .c-title{margin:0 0 11px;font-size:15px;font-weight:600;line-height:1.5;color:#dbe6f7}
+  .c-note{margin:-5px 0 11px;font-size:12.5px;line-height:1.6;color:#8ea3c0}
+  .c-note b{color:#b9cbe6;font-weight:600}
+  .linkrow{
+    display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.28);
+    border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:8px 10px;
+  }
+  .linkrow code{
+    flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12.5px;color:#9fb6d8;
+  }
+  .ibtn{
+    flex:none;background:rgba(255,255,255,.06);border:0;color:#b9c9e3;border-radius:6px;
+    padding:5px 10px;font-size:11.5px;cursor:pointer;transition:.15s;
+  }
+  .ibtn:hover{background:rgba(91,140,255,.25);color:#fff}
+  .c-foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:11px;font-size:12px;color:var(--muted)}
+  .code{
+    display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border-radius:7px;
+    background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.24);color:#86efac;
+  }
+  .code b{letter-spacing:1.5px;font-family:ui-monospace,Consolas,monospace}
+  .code button{background:transparent;border:0;color:#6ee7a8;cursor:pointer;font-size:11px;padding:0 2px;text-decoration:underline}
+  .meta{color:#6b7a92}
+  .meta a{color:#8ea6c8;text-decoration:none;border-bottom:1px dotted #425068}
+  .acts{margin-left:auto;display:flex;gap:8px}
+  .acts a{
+    text-decoration:none;font-size:12px;padding:5px 11px;border-radius:7px;
+    border:1px solid var(--line);color:#a9bcd8;transition:.15s;
+  }
+  .acts a:hover{border-color:rgba(91,140,255,.55);color:#dbe7ff;background:rgba(91,140,255,.1)}
+
+  /* ---------------- 空状态/脚注 ---------------- */
+  .empty{text-align:center;padding:70px 20px;color:var(--muted)}
+  .empty .big{font-size:40px;margin-bottom:14px;opacity:.5}
+  .empty h3{margin:0 0 10px;color:#c3d2e8;font-weight:600;font-size:16px}
+  .empty p{margin:5px 0;font-size:13px;line-height:1.8}
+  .hidden{display:none!important}
+  footer{
+    border-top:1px solid rgba(255,255,255,.05);padding:20px 26px;text-align:center;
+    color:#5f6d85;font-size:11.5px;line-height:1.9;
+  }
+  footer b{color:#7d8ca6}
+  .toast{
+    position:fixed;left:50%;bottom:38px;transform:translate(-50%,20px);opacity:0;
+    background:#1b2537;border:1px solid #2c3b55;color:#dbe7ff;padding:10px 20px;border-radius:10px;
+    font-size:13px;box-shadow:0 18px 40px rgba(0,0,0,.6);transition:.22s;pointer-events:none;z-index:99;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#243247;border-radius:9px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  @media (max-width:640px){
+    .topbar{padding:14px 16px}
+    .brand p{display:none}
+    main{padding:24px 14px 40px}
+    .hero h2{font-size:23px}
+    .searchbox{padding:6px 6px 6px 12px}
+    #go{padding:10px 16px}
+    .engines{margin-left:0;width:100%}
+    .c-foot{gap:8px}
+    .acts{margin-left:0;width:100%}
+    .score{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">影</div>
+    <div>
+      <h1>影盘搜</h1>
+      <p>全网影视网盘资源聚合搜索 · 本地运行</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span><span class="dot"></span>服务运行中</span>
+    <button id="btnHelp">使用说明</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h2>输入片名，全网找网盘资源</h2>
+    <p class="sub">聚合百度、360、必应等搜索引擎，自动挖掘公开网页中的百度网盘 / 夸克 / 阿里云盘 / 迅雷 / 123 等分享链接，并尝试识别提取码。</p>
+
+    <div class="searchbox">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>
+      </svg>
+      <input id="q" placeholder="例如：流浪地球2 / 漫长的季节 / 奥本海默" autocomplete="off" spellcheck="false">
+      <button id="go">搜索</button>
+    </div>
+
+    <div class="opts">
+      <label><input type="checkbox" id="optCheck"> 校验链接有效性（更慢）</label>
+      <label>深挖网页
+        <select id="optCrawl">
+          <option value="6">6 个（快）</option>
+          <option value="12" selected>12 个（推荐）</option>
+          <option value="20">20 个</option>
+          <option value="30">30 个（全）</option>
+        </select>
+      </label>
+      <div class="engines" id="engines">
+        <button class="eng on" data-engine="baidu">百度</button>
+        <button class="eng on" data-engine="so360">360</button>
+        <button class="eng on" data-engine="bing">必应</button>
+        <button class="eng" data-engine="sogou">搜狗</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="progress hidden" id="progress">
+    <div class="p-head">
+      <div class="p-stage"><span class="spinner" id="spin"></span><span id="stageText">准备中…</span></div>
+      <div class="p-count" id="pCount"></div>
+    </div>
+    <div class="bar indet" id="bar"><i id="barFill"></i></div>
+    <div class="eng-status" id="engStatus"></div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <section class="filters hidden" id="filters">
+    <div id="chips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <div class="spacer"></div>
+    <button class="mini" id="btnJson">导出 JSON</button>
+    <button class="mini" id="btnCsv">导出 CSV</button>
+  </section>
+
+  <section class="results" id="results"></section>
+
+  <section class="empty" id="empty">
+    <div class="big">🎬</div>
+    <h3>还没有搜索</h3>
+    <p>输入你想看的电影 / 剧集名称，按回车开始。</p>
+    <p>提示：加上年份或季数（如「庆余年 第二季」）通常更准。</p>
+  </section>
+</main>
+
+<footer>
+  <div><b>影盘搜</b> 仅聚合公开网页中被搜索引擎收录的分享链接，不存储、不上传、不代理任何文件。</div>
+  <div>请仅下载你有权观看的内容，遵守当地法律与各网盘服务条款；链接可能失效或含风险，请注意甄别。</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const state = { results: [], filter: "all", running: false, query: "", stats: {} };
+
+  /* ---------------- 工具 ---------------- */
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+  let toastTimer = null;
+  function toast(msg){
+    const el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
+  }
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      toast("已复制：" + (text.length > 42 ? text.slice(0,42) + "…" : text));
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); toast("已复制"); }catch(_){ toast("复制失败，请手动选择"); }
+      document.body.removeChild(ta);
+    }
+  }
+  function download(name, content, type){
+    const blob = new Blob([content], {type});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function statusText(s){
+    return s === "alive" ? "链接有效" : s === "dead" ? "可能失效" : s === "unchecked" ? "" : "未知";
+  }
+
+  /* ---------------- 进度 ---------------- */
+  function setStage(text, indeterminate){
+    $("stageText").textContent = text;
+    $("bar").classList.toggle("indet", !!indeterminate);
+    if(indeterminate) $("barFill").style.width = "";
+  }
+  function setBar(done, total){
+    $("bar").classList.remove("indet");
+    $("barFill").style.width = total ? Math.max(3, Math.min(100, done / total * 100)) + "%" : "10%";
+  }
+  function logLine(msg, level){
+    const box = $("log");
+    const div = document.createElement("div");
+    if(level === "warn") div.className = "warn";
+    div.textContent = msg;
+    box.appendChild(div);
+    while(box.childElementCount > 60) box.removeChild(box.firstChild);
+    box.scrollTop = box.scrollHeight;
+  }
+  function engineStatus(el){
+    const box = $("engStatus");
+    let node = box.querySelector('[data-e="' + el.engine + '"]');
+    if(!node){
+      node = document.createElement("span");
+      node.dataset.e = el.engine;
+      box.appendChild(node);
+    }
+    const cls = el.status === "ok" ? "s-ok" : (el.status === "blocked" ? "s-bad" : "s-empty");
+    const word = el.status === "ok" ? "正常" : el.status === "blocked" ? "被拦截" : "无结果";
+    node.innerHTML = '<b>' + escapeHtml(el.label) + '</b> <span class="' + cls + '">' + word +
+      (el.count ? ' · ' + el.count + ' 条' : '') + '</span>';
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function driveChips(){
+    const counts = new Map();
+    state.results.forEach(r => counts.set(r.drive, (counts.get(r.drive) || 0) + 1));
+    const chips = ['<button class="chip' + (state.filter === "all" ? " on" : "") + '" data-f="all">全部 <span class="n">' + state.results.length + '</span></button>'];
+    counts.forEach((n, drive) => {
+      const item = state.results.find(r => r.drive === drive);
+      chips.push('<button class="chip' + (state.filter === drive ? " on" : "") + '" data-f="' + drive + '" style="' +
+        (state.filter === drive ? 'border-color:' + item.color + ';color:' + item.color : '') + '">' +
+        escapeHtml(item.drive_label) + ' <span class="n">' + n + '</span></button>');
+    });
+    $("chips").innerHTML = chips.join("");
+    $("filters").classList.remove("hidden");
+  }
+
+  function cardHtml(r, idx){
+    const st = r.status && r.status !== "unchecked"
+      ? '<span class="st ' + r.status + '">' + statusText(r.status) + '</span>' : "";
+    const codeHtml = r.code
+      ? '<span class="code">提取码 <b>' + escapeHtml(r.code) + '</b><button data-copy="' + escapeHtml(r.code) + '">复制</button></span>'
+      : (r.needs_code === false
+          ? '<span class="meta">该网盘无需提取码</span>'
+          : '<span class="meta">未识别到提取码</span>');
+    const note = (r.note && r.note !== r.title) ? '<p class="c-note">' + escapeHtml(r.note) + '</p>' : "";
+    const src = r.page_url && r.page_url !== r.url
+      ? '<a href="' + escapeHtml(r.page_url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(r.domain) + '</a>'
+      : escapeHtml(r.domain);
+    return '<article class="card" data-idx="' + idx + '">' +
+      '<div class="c-head">' +
+        '<span class="badge" style="--c:' + r.color + '"><i></i>' + escapeHtml(r.drive_label) + '</span>' +
+        st +
+        '<span class="score">相关度 <b>' + (r.score != null ? r.score.toFixed(1) : "-") + '</b></span>' +
+      '</div>' +
+      '<h3 class="c-title">' + escapeHtml(r.title || "（无标题）") + '</h3>' +
+      note +
+      '<div class="linkrow"><code>' + escapeHtml(r.url) + '</code>' +
+        '<button class="ibtn" data-copy="' + escapeHtml(r.url) + '">复制链接</button>' +
+        '<a class="ibtn" href="' + escapeHtml(r.url) + '" target="_blank" rel="noopener noreferrer" style="text-decoration:none">打开</a>' +
+      '</div>' +
+      '<div class="c-foot">' + codeHtml +
+        '<span class="meta">来源：' + src + ' · 引擎：' + escapeHtml(r.engine || "-") + '</span>' +
+        '<span class="acts"><a href="' + escapeHtml(r.page_url || r.url) + '" target="_blank" rel="noopener noreferrer">查看来源页</a></span>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function render(){
+    const list = state.filter === "all" ? state.results : state.results.filter(r => r.drive === state.filter);
+    $("results").innerHTML = list.map(cardHtml).join("");
+    $("empty").classList.toggle("hidden", state.results.length > 0 || state.running);
+    driveChips();
+  }
+
+  function appendResult(r){
+    state.results.push(r);
+    const list = state.filter === "all" || state.filter === r.drive;
+    if(list){
+      const wrap = document.createElement("div");
+      wrap.innerHTML = cardHtml(r, state.results.length - 1);
+      $("results").appendChild(wrap.firstElementChild);
+    }
+    driveChips();
+  }
+
+  /* ---------------- 搜索 ---------------- */
+  async function runSearch(){
+    const q = $("q").value.trim();
+    if(!q){ $("q").focus(); return; }
+    if(state.running) return;
+
+    const engines = Array.from(document.querySelectorAll(".eng.on")).map(b => b.dataset.engine);
+    if(!engines.length){ toast("请至少选择一个搜索引擎"); return; }
+
+    state.running = true; state.results = []; state.filter = "all"; state.query = q;
+    $("results").innerHTML = "";
+    $("empty").classList.add("hidden");
+    $("progress").classList.remove("hidden");
+    $("filters").classList.add("hidden");
+    $("engStatus").innerHTML = ""; $("log").innerHTML = ""; $("pCount").textContent = "";
+    $("go").disabled = true; $("go").textContent = "搜索中";
+    $("spin").classList.remove("hidden");
+    setStage("正在检索…", true);
+
+    const started = Date.now();
+    try{
+      const resp = await fetch("/api/search", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          q,
+          check: $("optCheck").checked,
+          crawl: parseInt($("optCrawl").value, 10),
+          engines
+        })
+      });
+      if(!resp.ok || !resp.body){
+        let msg = "请求失败";
+        try{ const j = await resp.json(); msg = j.error || msg; }catch(_){}
+        throw new Error(msg);
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      for(;;){
+        const {done, value} = await reader.read();
+        if(done) break;
+        buffer += decoder.decode(value, {stream: true});
+        let nl;
+        while((nl = buffer.indexOf("\n")) >= 0){
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if(!line) continue;
+          let ev;
+          try{ ev = JSON.parse(line); }catch(_){ continue; }
+          handleEvent(ev);
+        }
+      }
+    }catch(err){
+      logLine("出错：" + err.message, "warn");
+      setStage("搜索失败：" + err.message, false);
+    }finally{
+      state.running = false;
+      $("go").disabled = false; $("go").textContent = "搜索";
+      $("spin").classList.add("hidden");
+    }
+  }
+
+  function handleEvent(ev){
+    switch(ev.type){
+      case "start":
+        setStage("开始检索《" + ev.query + "》…", true);
+        break;
+      case "stage":
+        setStage(ev.msg, ev.stage !== "crawl" && ev.stage !== "check");
+        if(ev.stage === "crawl"){ $("bar").classList.remove("indet"); $("barFill").style.width = "4%"; }
+        break;
+      case "engine":
+        engineStatus(ev);
+        break;
+      case "log":
+        logLine(ev.msg, ev.level);
+        break;
+      case "crawl":
+        setBar(ev.done, ev.total);
+        $("pCount").textContent = "已抓取 " + ev.done + "/" + ev.total + " 页 · 发现 " + ev.found + " 条";
+        break;
+      case "check":
+        setBar(ev.done, ev.total);
+        $("pCount").textContent = "校验 " + ev.done + "/" + ev.total;
+        break;
+      case "result":
+        appendResult(ev.item);
+        $("pCount").textContent = "已收集 " + state.results.length + " 条链接";
+        break;
+      case "error":
+        logLine(ev.msg, "warn");
+        break;
+      case "done":
+        finish(ev);
+        break;
+    }
+  }
+
+  function finish(ev){
+    state.stats = ev.stats || {};
+    state.results = (ev.results && ev.results.length) ? ev.results : state.results;
+    state.results.sort((a, b) => (b.score || 0) - (a.score || 0));
+    render();
+    const secs = state.stats.elapsed != null ? state.stats.elapsed : 0;
+    if(state.results.length){
+      setStage("完成：找到 " + state.results.length + " 条网盘链接，用时 " + secs + " 秒", false);
+      $("bar").classList.remove("indet");
+      $("barFill").style.width = "100%";
+      $("pCount").textContent = "共 " + state.results.length + " 条";
+    }else{
+      setStage("没有找到可提取的网盘链接", false);
+      $("barFill").style.width = "100%";
+      $("empty").classList.remove("hidden");
+      $("empty").innerHTML = '<div class="big">🔍</div><h3>没有找到可用链接</h3>' +
+        '<p>可以试试：换用更完整的片名、加上年份或「第二季」、把深挖网页调到 20~30 个。</p>' +
+        '<p>若日志里出现「被拦截」，说明搜索引擎临时限流，等几分钟再试即可。</p>';
+    }
+  }
+
+  /* ---------------- 事件 ---------------- */
+  $("go").addEventListener("click", runSearch);
+  $("q").addEventListener("keydown", (e) => { if(e.key === "Enter") runSearch(); });
+
+  document.querySelectorAll(".eng").forEach(btn => {
+    btn.addEventListener("click", () => btn.classList.toggle("on"));
+  });
+
+  $("chips").addEventListener("click", (e) => {
+    const chip = e.target.closest("[data-f]");
+    if(!chip) return;
+    state.filter = chip.dataset.f;
+    render();
+  });
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-copy]");
+    if(btn){ e.preventDefault(); copyText(btn.dataset.copy); }
+  });
+
+  $("btnJson").addEventListener("click", () => {
+    download("pansou-" + state.query + ".json",
+      JSON.stringify({query: state.query, results: state.results, stats: state.stats}, null, 2),
+      "application/json");
+  });
+  $("btnCsv").addEventListener("click", () => {
+    const rows = [["序号","网盘类型","链接","提取码","相关度","状态","来源站点","来源页面","标题","备注"]];
+    state.results.forEach((r, i) => rows.push([i+1, r.drive_label, r.url, r.code || "", r.score, r.status, r.domain, r.page_url, (r.title||"").replace(/\s+/g," "), (r.note||"").replace(/\s+/g," ")]));
+    const csv = "\ufeff" + rows.map(row => row.map(v => '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"').join(",")).join("\r\n");
+    download("pansou-" + state.query + ".csv", csv, "text/csv;charset=utf-8");
+  });
+
+  $("btnHelp").addEventListener("click", () => {
+    $("empty").classList.remove("hidden");
+    $("empty").innerHTML = '<div class="big">📖</div><h3>使用说明</h3>' +
+      '<p>1. 输入片名 → 回车，工具会同时检索多个搜索引擎，并深挖排在前面的网页。</p>' +
+      '<p>2. 从网页正文中自动识别网盘分享链接与提取码；点击「复制链接 / 复制提取码」即可使用。</p>' +
+      '<p>3. 结果按相关度排序；勾选「校验链接有效性」会额外访问分享页判断是否失效（较慢，且可能被网盘限流）。</p>' +
+      '<p>4. 若某引擎显示「被拦截」，说明触发了对方反爬，稍等几分钟或改用其他引擎；也可以在 config.json 里配置代理。</p>' +
+      '<p>5. 仅供个人查找公开资源使用，请遵守法律与平台条款。</p>';
+  });
+
+  // 支持 ?q=片名 直接搜索（方便收藏成书签）
+  const preset = new URLSearchParams(location.search).get("q");
+  if(preset){
+    $("q").value = preset;
+    runSearch();
+  }
+})();
+</script>
+</body>
+</html>

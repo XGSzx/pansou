@@ -1,0 +1,14 @@
+# 统一换行，避免批处理文件在 Linux/macOS 上被改写后无法运行
+* text=auto
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+*.png binary

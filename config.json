@@ -1,0 +1,50 @@
+{
+  "engines": {
+    "baidu": true,
+    "so360": true,
+    "bing": true,
+    "sogou": false,
+    "serper": true,
+    "bocha": true
+  },
+  "request": {
+    "timeout": 15,
+    "retries": 2,
+    "min_interval": 3.0,
+    "jitter": 0.35,
+    "max_page_bytes": 2500000,
+    "proxy": "",
+    "verify_tls": true
+  },
+  "search": {
+    "max_queries": 6,
+    "pages_per_query": 1,
+    "crawl_pages": 12,
+    "workers": 4,
+    "include_site_queries": true
+  },
+  "check": {
+    "enabled": false,
+    "workers": 5,
+    "timeout": 8
+  },
+  "output": {
+    "max_results": 60,
+    "min_score": 0.0,
+    "max_per_page": 15
+  },
+  "api": {
+    "serper_key": "",
+    "bocha_key": ""
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 21600,
+    "dir": ".cache"
+  },
+  "web": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "open_browser": true
+  }
+}

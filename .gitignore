@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 运行产物
+.cache/
+out/
+*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.chromeprofile*/
+Thumbs.db
+desktop.ini
+
+# 本地敏感配置（如需提交示例，请改成 config.example.json）
+config.local.json
